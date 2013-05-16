@@ -1,5 +1,5 @@
-#vform jquery plugin
-=====
+#Vform jquery plugin
+^^Simple js script for form validation
 
 ##Features
 
