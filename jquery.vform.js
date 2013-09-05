@@ -1,19 +1,14 @@
 (function($){
 
 
-	/* version 1.0 */
-
 
 	$.fn.vform = function(options){
 	
 
-
-		var version = "1.0";
-
+		var version = "1.1";
 
 
-
-		/* Settings */
+		/* Настройки */
 		var options = $.extend({
 			form: 'form',
 			type: 'post',
@@ -31,15 +26,16 @@
 			alertLabel: 'label',
 			submitCallback: undefined,
 			errorCallback: undefined,
+			alertCallback: undefined,
 			successCallback: undefined
 		}, options || {});
 
 
 
 
+		/* Перменные */
 
 
-		/* Constants */
 
 		var form = $(this);
 		var loader = $(options.loader);
@@ -50,19 +46,18 @@
 
 
 
-
-		/* Functions */
-
+		/* Функции */
 
 
 
 
-		/* Show errors */
+
+		/* Показывает ошибку */
 		var showFieldError = function(name, error){
 
 
 
-			/* exit, if no input params */
+			/* Останавливается если не переданы параметры */
 			if(!name || !error){return;}
 
 
@@ -84,7 +79,7 @@
 
 
 
-			/* adds class to input tag */
+			/* Добавляет класс тегу input */
 			if(options.errorInput){
 				field.addClass(options.errorClass);
 			}
@@ -92,7 +87,7 @@
 
 
 
-			/* Adds class to field's label */
+			/* Добавляет класс к лейблу поля */		
 			if(options.errorLabel){
 				var label = $('label[for="'+ field.attr('id') +'"]');
 				if(label.length > 0){
@@ -104,7 +99,7 @@
 
 
 
-			/* Show error message for field */
+			/* Показывает сообщение об ошибке для поля */
 			if(options.errorMessage){
 				var message = $(options.message + '[' + options.connector + '="' + name + '"]');
 				if(options.messages && options.messages[name]){
@@ -121,15 +116,15 @@
 
 
 
-		/*  Check rules and highlight errors*/
+		/* Проверка правил и подсветка ошибок */
 		var checkRules = function(){
 			for(key in options.rules){
-
+				
 
 				var type = $.type(options.rules[key]);
 				
 
-				/* If input is Object */
+				/* Если переден объект */
 				if(type === 'object'){
 					for(node in options.rules[key]){
 						var name = key;
@@ -140,7 +135,7 @@
 
 
 
-				/* If input is array */
+				/* Если переден массив */
 				if(type === 'array'){
 					var name = key;
 					for(node in options.rules[key]){
@@ -150,7 +145,7 @@
 				}
 
 
-				/* Check value */
+				/* Проверяет переданное значение */
 				else{
 					checkRulesType(key, options.rules[key]);
 				}
@@ -164,8 +159,6 @@
 
 
 
-
-		/* Check rules type */
 		var checkRulesType = function(name, key, value){
 
 
@@ -173,7 +166,7 @@
 
 
 
-				/* Function */
+				/* Функция */
 				case 'function': 
 					if(value instanceof Function){
 						var result = value(form,name);
@@ -188,7 +181,7 @@
 
 
 
-				/* Empty Filed */
+				/* Пустрое поле */
 				case 'empty':
 					var empty = checkFieldEmpty(name);
 					if(empty == true){
@@ -212,7 +205,6 @@
 
 
 
-				/* Number */
 				case 'number':
 					var number = checkFieldNumber(name);
 					if(number == true){
@@ -227,7 +219,7 @@
 
 
 
-			/* Check object */
+			/* Отдельная проверка переданного объекта*/
 			if(key instanceof Function){
 				var result = key(form,name);
 				if(result == false){
@@ -247,13 +239,13 @@
 
 
 
-		/* Checks empty fields */
+		/* Проверяет пустые поля */
 		var checkFieldEmpty = function(name){
 
 
-			/* For input */
+			/* Для input */
 			if($('input[name="'+ name +'"]', form).length > 0){
-				var value = $.trim($('input[name="'+ name +'"]', form).val())
+				var value = $('input[name="'+ name +'"]', form).val();
 				if(value.length == 0){
 					showFieldError(name, 'empty');
 					return true;
@@ -261,18 +253,18 @@
 			}
 
 
-			/* For textarea */
+			/* Для textarea */
 			if($('textarea[name="'+ name +'"]', form).length > 0){
-				var value = $.trim($('textarea[name="'+ name +'"]', form).val())
+				var value = $('textarea[name="'+ name +'"]', form).val();
 				if(value.length == 0){
 					showFieldError(name, 'empty');
 					return true;
 				}
 			}
 
-			/* For select */
+			/* Для select */
 			if($('select[name="'+ name +'"]', form).length > 0){
-				var value = $.trim($('select[name="'+ name +'"]', form).val());
+				var value = $('select[name="'+ name +'"]', form).val();
 				if(value.length == 0){
 					showFieldError(name, 'empty');
 					return true;
@@ -288,13 +280,13 @@
 
 
 
-		/* Highlights fields with "email" rule  */		
+		/* Подсвечивает поля у которых указан тип проверки email */		
 		var checkFieldEmail = function(name){
  			
 
 
 
-			/* For input */
+			/* Для input */
 			if($('input[name="'+ name +'"]', form).length > 0){
 				var value = $('input[name="'+ name +'"]', form).val();
 				reg = new RegExp("[0-9a-z_]+@[0-9a-z_^.]+\\.[a-z]{2,3}", 'i');
@@ -309,7 +301,7 @@
 
 
 
-			/* For textarea */
+			/* Для textarea */
 			if($('textarea[name="'+ name +'"]', form).length > 0){
 				var value = $('textarea[name="'+ name +'"]', form).val();
 				reg = new RegExp("[0-9a-z_]+@[0-9a-z_^.]+\\.[a-z]{2,3}", 'i');
@@ -322,7 +314,7 @@
 				}
 			}
 
-			/* For select */
+			/* Для select */
 			if($('select[name="'+ name +'"]', form).length > 0){
 				var value = $('select[name="'+ name +'"]', form).val();
 				reg = new RegExp("[0-9a-z_]+@[0-9a-z_^.]+\\.[a-z]{2,3}", 'i');
@@ -343,13 +335,13 @@
 
 
 
-		/* Highlights fields with "number" rule */
+		/* Подсвечивает поля у которых указан тип проверки number */
 		var checkFieldNumber = function(name){
  			
 
 
 
-			/* For input */
+			/* Для input */
 			if($('input[name="'+ name +'"]', form).length > 0){
 				var value = $('input[name="'+ name +'"]', form).val();
 				reg = new RegExp("[0-9]", 'i');
@@ -364,7 +356,7 @@
 
 
 
-			/* For textarea */
+			/* Для textarea */
 			if($('textarea[name="'+ name +'"]', form).length > 0){
 				var value = $('textarea[name="'+ name +'"]', form).val();
 				reg = new RegExp("[0-9]", 'i');
@@ -378,7 +370,7 @@
 			}
 
 
-			/* For select */
+			/* Для select */
 			if($('select[name="'+ name +'"]', form).length > 0){
 				var value = $('select[name="'+ name +'"]', form).val();
 				reg = new RegExp("[0-9]", 'i');
@@ -400,7 +392,7 @@
 
 
 
-		/* Show errors recieved from server */
+		/* Выводит ошибки которые приходят с сервера */
 		var showAllErrors = function(errors){
 			for(key in errors){
 				showFieldError(key, errors[key]);
@@ -410,7 +402,7 @@
 
 
 
-		/* Hide all errors*/
+		/* Прячет ошибки */
 		var hideAllErrors = function(){
 
 
@@ -419,7 +411,7 @@
 
 
 
-			/* Remove error class from input, textarea, select */
+			/* Убирает класс ошибки у тегов полей (input) */
 			if(options.errorInput){
 				$('input', form).removeClass(options.errorClass);
 				$('textarea', form).removeClass(options.errorClass);
@@ -427,13 +419,13 @@
 			}
 
 
-			/* Remove error class from labels */
+			/* Убирает класс ошибки у лейблов */
 			if(options.errorLabel){
 				var label = $('label').removeClass(options.errorClass);
 			}
 
 
-			/* Remove error alert */
+			/* Прячет сообщение об ошибках */
 			if(options.errorMessage){
 				$(options.message).hide();
 			}
@@ -446,17 +438,17 @@
 
 
 
-		/* Hide error */
+		/* Прячет ошибки */
 		var hideError = function(input){
 
 
-			/* Remove error class */
+			/* Убирает класс error */
 			if(options.errorInput){
 				input.removeClass(options.errorClass);
 			}
 
 
-			/* Remove error class for label */
+			/* Убирает класс error у лейбла для поля */
 			if(options.errorLabel){
 				if(!input.attr('id')){
 					return;
@@ -471,7 +463,7 @@
 			}
 
 
-			/* Hide error message */
+			/* Прячем сообщение с ошибкой */
 			if(options.errorMessage){
 				var message = $(options.message + '[' + options.connector + '="' + input.attr('name') + '"]', form);
 				message.fadeOut(50);
@@ -483,7 +475,7 @@
 
 
 
-		/* Show alert */
+		/* Показывает алерт */
 		var showAlert = function(errors){
 			var counter = 0;
 			for(key in errors){
@@ -492,6 +484,9 @@
 					var error = errors[key];
 					$(options.alertLabel, alert).empty().append(options.alerts[key][error]);
 					alert.show();
+					if(options.alertCallback instanceof Function){
+						options.alertCallback(errors);
+					}
 				}
 				counter++;
 			}
@@ -499,7 +494,7 @@
 
 
 
-		/* Hide alert  */
+		/* Скрывает  */
 		var hideAlert = function(){
 			$(options.alert, form).hide();
 		}
@@ -507,7 +502,7 @@
 
 
 
-		/* blocks form */
+		/* Блокирует форму */
 		var blockForm = function(){
 			$('input[type="submit"]', form).attr('disabled','disabled');
 			$('button', form).attr('disabled','disabled');
@@ -515,7 +510,7 @@
 
 
 
-		/* remove form block */
+		/* Снимает блокировку формы */
 		var unblockForm = function(){
 			$('input[type="submit"]', form).removeAttr('disabled');
 			$('button', form).removeAttr('disabled');
@@ -525,7 +520,7 @@
 
 
 
-		/* Converts results of serializeArray() to object (for $.ajax) */
+		/* Конвертирует результаты serializeArray() в формат подходящий для передачи в $.ajax */
 		var getFormDataObject = function(){
 			
 
@@ -546,7 +541,7 @@
 
 
 
-		/* Coverts fields values  */
+		/* Конвертирует занчения полей */
 		var convertData = function(){
 			
 
@@ -574,7 +569,7 @@
 
 
 
-		/* Own events */
+		/* Собственные события */
 		form.bind('hideErrors', function(){
 			hideAllErrors();
 		});
@@ -582,13 +577,12 @@
 
 
 
-
-		/* Events */
-
+		/* События */
 
 
 
-		/* Form submit */
+
+		/* Сабмит формы */
 		form.off('submit');
 		form.on('submit', function(e){
 			
@@ -660,11 +654,11 @@
 					beforeSend: function(){
 						
 
-						/* Show loader */
+						/* Показывает индикатор загрузки */
 						loader.fadeIn();
 
 
-						/* Blocks form */
+						/* Ставит блокировку на форму */
 						if(options.block == true){
 							blockForm();
 						}
@@ -673,7 +667,7 @@
 					},
 					error: function(){
 						loader.fadeOut();
-						/* Calls error callback */
+						/* Вызывает сallback ошибки валидации формы */
 						if(options.errorCallback instanceof Function){
 							options.errorCallback();
 						}
@@ -681,12 +675,12 @@
 					success: function(data){
 
 
-						/* Hide loader */
+						/* Прячет индикатор загрузки */
 						loader.fadeOut();
 
 
 
-						/* Remove form block */
+						/* Снимает блокировку с формы */
 						if(options.block == true){
 							unblockForm();
 						}
@@ -697,19 +691,19 @@
 							
 
 
-							/* Show errors */
+							/* Показывает ошибку */
 							showAllErrors(data.errors);
 
 
 
-							/* Show alerts */
+							/* Показывает алерты */
 							if(options.alerts && options.errorAlert){
 								showAlert(data.errors);
 							}
 
 
 
-							/* Call error callback */
+							/* Вызывает сallback ошибки валидации формы */
 							if(options.errorCallback instanceof Function){
 								options.errorCallback(data);
 							}
@@ -721,7 +715,7 @@
 
 
 
-							/* calls successCallback */
+							/* Вызывает сallback успешной валидации формы */
 							if(options.successCallback instanceof Function){
 								options.successCallback(data, form);
 							}
@@ -745,7 +739,7 @@
 
 
 
-		/* Remove error from input on change  */
+		/* Убрать ошибку с инпута при изменении */
 		$('input', form).on('keydown', function(){
 			hideError($(this));
 		});
@@ -754,7 +748,7 @@
 
 
 
-		/* Remove error from textarea on change  */
+		/* Убрать ошибку с текстового поля при изменении */
 		$('textarea', form).on('keydown', function(){
 			hideError($(this));
 		});		
@@ -762,17 +756,13 @@
 
  
 
-		/* Remove error from select on change  */
+		/* Убрать ошибку с селекта при изменении */
 		$('select', form).on('change', function(){
 			hideError($(this));
 		});
 
  
-
-
 		return version;
- 
-
  
 	}
 
