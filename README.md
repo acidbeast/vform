@@ -12,4 +12,7 @@ Simple js script for form validation
   * shows external container which used for all fields (alert)
 
 
-=====
+##Usage
+```javascript
+$('form').vform();
+```
