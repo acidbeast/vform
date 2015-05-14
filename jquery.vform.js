@@ -5,13 +5,15 @@
 	$.fn.vform = function(options){
 	
 
-		var version = "1.1";
+		var version = "1.6";
 
 
 		/* Настройки */
 		var options = $.extend({
 			form: 'form',
 			type: 'post',
+			dataType: 'json',
+			contentType: 'application/json; charset=utf-8;',
 			block: true,
 			loader: '.loader',
 			errorClass: 'error',
@@ -27,7 +29,8 @@
 			submitCallback: undefined,
 			errorCallback: undefined,
 			alertCallback: undefined,
-			successCallback: undefined
+			successCallback: undefined,
+			forceCallback: undefined
 		}, options || {});
 
 
@@ -39,9 +42,19 @@
 
 		var form = $(this);
 		var loader = $(options.loader);
-		var dataUrl = form.attr('action');
+		var dataUrl;
 		var errors = 0;
 		var errorsMessage = {};
+
+
+
+		if(options.url){
+			dataUrl = options.url;
+		}
+		else {
+			dataUrl = form.attr('action');
+		}
+
 
 
 
@@ -161,7 +174,6 @@
 
 		var checkRulesType = function(name, key, value){
 
-
 			switch(key){
 
 
@@ -242,7 +254,6 @@
 		/* Проверяет пустые поля */
 		var checkFieldEmpty = function(name){
 
-
 			/* Для input */
 			if($('input[name="'+ name +'"]', form).length > 0){
 				var value = $('input[name="'+ name +'"]', form).val();
@@ -282,7 +293,6 @@
 
 		/* Подсвечивает поля у которых указан тип проверки email */		
 		var checkFieldEmail = function(name){
- 			
 
 
 
@@ -337,7 +347,7 @@
 
 		/* Подсвечивает поля у которых указан тип проверки number */
 		var checkFieldNumber = function(name){
- 			
+
 
 
 
@@ -480,7 +490,7 @@
 			var counter = 0;
 			for(key in errors){
 				if(options.alerts[key] && counter < 1){
-					var alert = $(options.alert, form);
+					var alert = $(options.alert);
 					var error = errors[key];
 					$(options.alertLabel, alert).empty().append(options.alerts[key][error]);
 					alert.show();
@@ -541,19 +551,19 @@
 
 
 
-		/* Конвертирует занчения полей */
+		/* Конвертирует значения полей */
 		var convertData = function(){
 			
 
-			if(!options.convert instanceof Object){ return;}
+			if(!options.convertData instanceof Object){ return;}
 			
 
 			var formData = getFormDataObject();
 
 
-			for(convertKey in options.convert){
-				if(options.convert[convertKey] instanceof Function){
-					var result = options.convert[convertKey](formData[convertKey]);
+			for(convertKey in options.convertData){
+				if(options.convertData[convertKey] instanceof Function){
+					var result = options.convertData[convertKey](formData[convertKey]);
 					formData[convertKey] = result;
 				}
 			}
@@ -563,6 +573,18 @@
 
 		}
 
+
+
+
+
+
+		/* Удаляет лишние данные при сабрите формы */
+		var deleteData = function(formData){
+			for(key in options.deleteData){
+				delete formData[options.deleteData[key]];
+			}
+			return formData;
+		}
 
 
 
@@ -585,7 +607,6 @@
 		/* Сабмит формы */
 		form.off('submit');
 		form.on('submit', function(e){
-			
 
 			e.preventDefault();
 
@@ -594,13 +615,6 @@
 			/* Прячет ошибки и алерт */			
 			hideAllErrors();
 			hideAlert();
-
-
-
-			/* Вызывает callback при сабмите */
-			if(options.submitCallback instanceof Function){
-				options.submitCallback();
-			}
 
 
 
@@ -625,10 +639,8 @@
 				var formData,
 					convertLength = 0;
 
-
-
-				if(options.convert instanceof Object){
-					convertLength = $.map(options.convert, function(n, i) { return i; }).length;
+				if(options.convertData instanceof Object){
+					convertLength = $.map(options.convertData, function(n, i) { return i; }).length;
 				}
 
 
@@ -636,11 +648,47 @@
 				/*	Проверяет convert, если там есть правила для конвертации, то запускает функцию конвертации
 					в противном случае просто сериализует форму и отправляет ее на сервер
 				 */
-				if(options.convert instanceof Object && convertLength > 0){
+				if(options.convertData instanceof Object && convertLength > 0){
 					formData = convertData();
 				}
 				else{
-					formData = form.serialize();
+					formData = getFormDataObject();
+				}
+
+
+
+
+				/* Добавляет дополнительные данные из mixinData поверх данных формы */
+				if(options.mixinData instanceof Function){
+					mixinData = options.mixinData();
+					formData = $.extend(formData, mixinData || {});
+				}
+				else if(options.mixinData instanceof Object){
+					formData = $.extend(formData, options.mixinData || {});
+				}
+
+
+
+				/* Удаляет лишние данные */
+				if(options.deleteData instanceof Object){
+					formData = deleteData(formData);
+				}
+
+
+
+
+				/* Делает JSON из данных */
+				if(options.stringifyData == true){
+					if(JSON.stringify instanceof Function){
+						formData = JSON.stringify(formData);
+					}
+				}
+
+
+
+				/* Вызывает callback при сабмите */
+				if(options.submitCallback instanceof Function){
+					options.submitCallback(form, formData);
 				}
 
 
@@ -649,10 +697,10 @@
 				$.ajax({
 					type: options.type,
 					url: dataUrl,
-					dataType: 'json',
+					dataType: options.dataType,
+					contentType: options.contentType,
 					data: formData,
 					beforeSend: function(){
-						
 
 						/* Показывает индикатор загрузки */
 						loader.fadeIn();
@@ -662,14 +710,12 @@
 						if(options.block == true){
 							blockForm();
 						}
-
-
 					},
-					error: function(){
+					error: function(data){
 						loader.fadeOut();
 						/* Вызывает сallback ошибки валидации формы */
 						if(options.errorCallback instanceof Function){
-							options.errorCallback();
+							options.errorCallback(data);
 						}
 					},
 					success: function(data){
@@ -688,7 +734,6 @@
 
 
 						if(data.error || data.status == 'error'){
-							
 
 
 							/* Показывает ошибку */
@@ -721,6 +766,13 @@
 							}
 
 
+						}
+
+
+
+						/* Вызывает force сallback */
+						if(options.forceCallback instanceof Function){
+							options.forceCallback(data, form);
 						}
 
 
